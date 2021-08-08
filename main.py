@@ -3,10 +3,12 @@ import logging
 from replit import db
 from telegram import Update #upm package(python-telegram-bot)
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext  #upm package(python-telegram-bot)
+from telegram.ext import InlineQueryHandler
+import inline
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def latest_key():
@@ -22,25 +24,24 @@ Welcome
 Send a message to store it.
 Send /fetch to retrieve the most recent message'''
     update.message.reply_text(htext)
-
 def help(update, context):
     """Send a message when the command /help is issued."""
     update.message.reply_text('Help!')
-
 def whoami(update, context):
     """Send a message when the command /whoami is issued."""
     name = update.message.from_user.username
     update.message.reply_text('You are ' + name)
-
 def log(update: Update, context: CallbackContext) -> None:
     db[str(latest_key() + 1)] = update.message.text
-
 def fetch(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(db.get(str(latest_key()), 'No Messages Yet.'))
-
 def echo(update, context):
     """Echo the user message."""
     update.message.reply_text(update.message.text)
+def caps(update, context):
+    text_caps = ' '.join(context.args).upper()
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text_caps)
+
 
 def error(update, context):
     """Log Errors caused by Updates."""
@@ -57,10 +58,13 @@ def main():
     dispatcher.add_handler(CommandHandler("fetch", fetch))
     dispatcher.add_handler(CommandHandler("whoami", whoami))
     dispatcher.add_handler(CommandHandler("echo", echo))
+    dispatcher.add_handler(CommandHandler('caps', caps))
     """Dispatcher non-Commands"""
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, log))
-
     dispatcher.add_error_handler(error)
+    """Dispatcher inline only"""
+    #dispatcher.add_handler(InlineQueryHandler(inline.inline_caps))
+    dispatcher.add_handler(InlineQueryHandler(inline.inlinequery))
 
     updater.start_polling()
 
